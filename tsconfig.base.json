@@ -20,7 +20,8 @@
       "@integra/database": ["./packages/database/src"],
       "@integra/types": ["./packages/types/src"],
       "@integra/tiktok": ["./packages/tiktok/src"],
-      "@integra/game-engine": ["./packages/game-engine/src"]
+      "@integra/game-engine": ["./packages/game-engine/src"],
+      "@integra/realtime": ["./packages/realtime/src"]
     }
   },
   "exclude": ["node_modules", "dist"]

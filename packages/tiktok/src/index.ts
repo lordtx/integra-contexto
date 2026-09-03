@@ -1,7 +1,6 @@
 // ============================================================
 // TikTok Adapter — Interface Abstrata
 // ============================================================
-
 import type {
   Platform,
   NormalizedChatEvent,

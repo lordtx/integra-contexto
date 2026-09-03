@@ -42,6 +42,19 @@ export interface NormalizedGiftEvent {
 
 export type NormalizedEvent = NormalizedChatEvent | NormalizedFollowEvent | NormalizedGiftEvent;
 
+export type GameStatus = 'draft' | 'ready' | 'active' | 'paused' | 'finished';
+
+export interface GameState {
+  id: string;
+  streamId: string;
+  gameType: string;
+  secretWordId: string;
+  secretWord: string;
+  status: GameStatus;
+  startedAt?: number;
+  finishedAt?: number;
+}
+
 export type RealtimeEventType =
   | 'game.started'
   | 'guess.created'
