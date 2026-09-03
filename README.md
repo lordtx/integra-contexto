@@ -4,121 +4,166 @@ Plataforma self-hosted de jogos interativos para transmissões ao vivo.
 
 **Primeiro jogo:** Integra Contexto — jogo semântico multiplayer via chat da LIVE.
 
-## ⚡ POC — TikTok Adapter (Fase 1)
+---
 
-✅ **Status: Concluído — Usando PirateTok/live-js** (0BSD license)
+## ✅ Status do Projeto
 
-O adapter se conecta a qualquer LIVE do TikTok usando **apenas o username do streamer** — sem API key, sem servidor externo, sem custo.
+| Módulo | Status | Descrição |
+|--------|--------|-----------|
+| TikTok Adapter | ✅ **Concluído** | PirateTok/live-js (0BSD, sem API key) |
+| Database Schema | ✅ **Concluído** | PostgreSQL + pgvector (8 tabelas) |
+| Game Engine | ✅ **Concluído** | 7 módulos: GameManager, WordManager, SemanticEngine, RankingEngine, HintEngine, ScoreEngine, LocalEmbedding |
+| BullMQ Workers | ✅ **Concluído** | 4 filas: tiktok-events, process-guesses, calculate-score, broadcast-events |
+| WebSocket Gateway | ✅ **Concluído** | Redis Pub/Sub + salas por gameId |
+| API REST | ✅ **Concluído** | Fastify + rotas de games, streams, words |
+| Seed Vocabulary | ✅ **Concluído** | 340+ palavras em português com embeddings |
+| Dashboard / Overlay | ⏳ **Pendente** | Next.js |
 
-### Como testar
+---
+
+## ⚡ Como usar
 
 ```bash
 # 1. Instalar dependências
 npm install
 
-# 2. Executar o POC
+# 2. Subir infraestrutura
+docker compose up -d
+
+# 3. Seed do vocabulário
+npm run seed:vocab
+
+# 4. Criar jogo de teste
+npm run seed:game
+
+# 5. Testar conexão TikTok
 npx tsx apps/api/src/poc.ts <username_do_streamer>
 ```
 
-### Exemplo de saída
+### Endpoints da API
 
 ```
-╔══════════════════════════════════════════════╗
-║     INTEGRA CONTEXTO — POC TikTok Adapter   ║
-╚══════════════════════════════════════════════╝
-
-  ✅ Conectado à LIVE de @joaosilva
-
-  💬 #1 │ @maria: "praia"
-     ↳ Normalizado: "praia"
-     ↳ Pipeline: validar → rate limit → dedup → embedding → ranking
-  ➕ FOLLOW │ @pedro começou a seguir!
-  🎁 GIFT   │ @lucas enviou Rosas (100💎 x5)
+GET  /health                    → Status do servidor
+GET  /status                    → Status detalhado (DB, jogos, palavras)
+POST /api/games                 → Criar novo jogo
+GET  /api/games/:id             → Detalhe do jogo
+POST /api/games/:id/start       → Iniciar jogo
+POST /api/games/:id/pause       → Pausar jogo
+POST /api/games/:id/resume      → Retomar jogo
+POST /api/games/:id/finish      → Finalizar jogo
+POST /api/games/:id/hint        → Gerar dica
+GET  /api/games/:id/leaderboard → Ranking atual
+POST /api/streams               → Registrar live
+POST /api/streams/:id/end       → Finalizar live
+GET  /api/streams/active        → Live ativa
+GET  /api/words/search?q=       → Buscar palavras
+POST /api/words                 → Adicionar palavra
 ```
 
-### Eventos capturados (64 tipos via PirateTok)
+### WebSocket
 
-| Evento | Descrição |
-|--------|-----------|
-| `chat.message` | Mensagem no chat |
-| `follow` | Novo seguidor |
-| `gift` | Gift enviado |
-| `like` | Curtida |
-| `join` | Entrou na LIVE |
-| `share` | Compartilhou |
-| `liveEnded` | LIVE encerrada |
+Conecte em `ws://ws.dtxnet.top` e envie:
+
+```json
+{"type": "subscribe", "gameId": "game_xxx"}
+```
+
+Eventos recebidos:
+
+```json
+{"event": "leaderboard.updated", "gameId": "game_xxx", "data": {...}}
+{"event": "game.started", "gameId": "game_xxx"}
+{"event": "game.finished", "gameId": "game_xxx"}
+```
+
+---
 
 ## Arquitetura
 
 ```
 TikTok LIVE App
     ↓
-[PirateTok WebSocket] ← 0BSD, sem API key
+[PirateTok WebSocket] → 0BSD, sem API key, só username
     ↓
-TikTok Adapter (pacote @integra/tiktok)
+TikTok Adapter (packages/tiktok)
     ↓
-Normalized Events (contrato @integra/types)
+Normalized Events (packages/types)
     ↓
-Redis / BullMQ
-    ↓
-Worker
-    ↓
-Game Engine
-    ↓
-PostgreSQL + pgvector + WebSocket
-    ↓
-Dashboard + Overlay
+┌──────────────────────────────────┐
+│         REDIS / BullMQ           │
+│  tiktok-events → process-guesses │
+│  calculate-score → broadcast     │
+└────────────┬─────────────────────┘
+             ↓
+┌──────────────────────────────────┐
+│           WORKER                 │
+│  process-chat → process-guess    │
+│  → score → broadcast             │
+└────────────┬─────────────────────┘
+             ↓
+┌──────────────────────────────────┐
+│         GAME ENGINE              │
+│  GameManager · SemanticEngine    │
+│  RankingEngine · ScoreEngine     │
+│  HintEngine · WordManager        │
+│  LocalEmbedding (trigram)        │
+└────────────┬─────────────────────┘
+             ↓
+    ┌───────┼───────────┐
+    ↓       ↓           ↓
+PostgreSQL Redis   WebSocket Gateway
++pgvector  Cache   (packages/realtime)
+                    ↓
+              Dashboard + Overlay
 ```
+
+---
 
 ## Stack
 
-- **Frontend:** Next.js, React, Tailwind, shadcn/ui
-- **Backend:** NestJS + Fastify
-- **Banco:** PostgreSQL + pgvector
-- **Cache/Filas:** Redis + BullMQ
-- **Realtime:** WebSocket
-- **Integração TikTok:** PirateTok/live-js (WebSocket direto)
-- **Infra:** Docker, Coolify, Traefik, Cloudflare
+| Camada | Tecnologia |
+|--------|-----------|
+| Frontend | Next.js, React, Tailwind, shadcn/ui (futuro) |
+| Backend | Fastify (Node.js 22+) |
+| Banco | PostgreSQL 16 + pgvector |
+| Cache/Filas | Redis 7 + BullMQ |
+| Realtime | WebSocket (ws) + Redis Pub/Sub |
+| Integração TikTok | PirateTok/live-js (WebSocket direto, 0BSD) |
+| Infra | Docker, Coolify, Traefik, Cloudflare |
+| Domínio | dtxnet.top |
 
-## Estrutura
+---
+
+## Pipeline de Processamento
 
 ```
-integra-contexto/
-├── apps/
-│   ├── web/          # Next.js (dashboard + overlay)
-│   ├── api/          # Fastify API (POC rodando)
-│   ├── worker/       # BullMQ workers
-│   └── engine/       # Game engine standalone
-├── packages/
-│   ├── database/     # Schema, migrations
-│   ├── types/        # Tipos compartilhados (event contracts)
-│   ├── ui/           # Componentes compartilhados
-│   ├── tiktok/       # TikTok adapter (PirateTok)
-│   └── game-engine/  # Core do jogo
-├── infrastructure/   # Dockerfiles
-├── docs/             # Documentação
-└── docker-compose.yml
+Chat da LIVE
+    ↓ TikTok Adapter (PirateTok WebSocket)
+    ↓ normalizeWord() — limpa, normaliza, valida
+    ↓ Rate limit (5 msg/10s por usuário) — Redis
+    ↓ Deduplicação — Redis SET NX (5min TTL)
+    ↓ BullMQ: tiktok-events → process-guesses
+    ↓ Busca/cria word no PostgreSQL
+    ↓ Busca embedding + calcula score
+    ↓ RankingEngine.addGuess()
+    ↓ Persiste guess + leaderboard
+    ↓ BullMQ: broadcast-events → Redis Pub/Sub
+    ↓ WebSocket Gateway → Dashboard + Overlay
 ```
 
-## Roadmap
+---
 
-| Fase | O que | Status |
-|------|-------|--------|
-| 1 | POC TikTok Adapter | ✅ Concluído (PirateTok) |
-| 2 | Core (Game Engine, DB, Redis) | ⏳ Pendente |
-| 3 | Interface (Dashboard, Overlay) | ⏳ Pendente |
-| 4 | Produção (Security, Load test) | ⏳ Pendente |
+## Domínios
 
-## Infraestrutura
-
-```bash
-docker compose up -d
+```
+dtxnet.top            → Landing page
+api.dtxnet.top        → API + endpoints REST
+ws.dtxnet.top         → WebSocket Gateway
+overlay.dtxnet.top    → Overlay OBS
+app.dtxnet.top        → Dashboard (futuro)
 ```
 
-- `dtxnet.top` — Landing page
-- `api.dtxnet.top` — API
-- `overlay.dtxnet.top` — Overlay OBS
-- `ws.dtxnet.top` — WebSocket
+---
 
 ## Licença
 
