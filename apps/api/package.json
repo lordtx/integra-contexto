@@ -12,8 +12,12 @@
   "dependencies": {
     "@integra/tiktok": "*",
     "@integra/types": "*",
+    "@integra/database": "*",
+    "@integra/game-engine": "*",
+    "@integra/realtime": "*",
     "fastify": "^5.0.0",
     "@fastify/cors": "^10.0.0",
+    "fastify-plugin": "^4.5.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
