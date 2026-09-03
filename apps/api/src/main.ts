@@ -1,36 +1,39 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import databasePlugin from './plugins/database.js';
-import { registerRoutes } from './routes/index.js';
+import { databasePlugin } from './plugins/database.js';
+import { gameRoutes } from './routes/games.js';
+import { streamRoutes } from './routes/streams.js';
+import { wordRoutes } from './routes/words.js';
 
 const app = Fastify({ logger: true });
 
-await app.register(cors, { origin: true, credentials: true });
-await app.register(databasePlugin);
-await registerRoutes(app);
+async function main() {
+  await app.register(cors);
+  await app.register(databasePlugin);
 
-app.get('/health', async () => ({
-  status: 'ok',
-  service: 'integra-contexto-api',
-  version: '0.1.0',
-  timestamp: new Date().toISOString(),
-  uptime: process.uptime(),
-}));
+  // Health check
+  app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 
-app.get('/status', async () => {
-  const db = (app as any).db;
-  const games = await db('games').count('* as total');
-  const words = await db('words').count('* as total');
-  return { database: { games: games[0]?.total, words: words[0]?.total }, uptime: process.uptime() };
+  // Status
+  app.get('/status', async () => ({
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    version: '0.1.0',
+  }));
+
+  // Rotas
+  await app.register(gameRoutes, { prefix: '/api/games' });
+  await app.register(streamRoutes, { prefix: '/api/streams' });
+  await app.register(wordRoutes, { prefix: '/api/words' });
+
+  const port = parseInt(process.env.PORT || '3000', 10);
+  await app.listen({ port, host: '0.0.0.0' });
+  console.log(`API rodando na porta ${port}`);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
 });
 
-const PORT = parseInt(process.env.API_PORT || '3001', 10);
-const HOST = process.env.API_HOST || '0.0.0.0';
-
-try {
-  await app.listen({ port: PORT, host: HOST });
-  console.log(`API rodando em http://${HOST}:${PORT}`);
-} catch (err) {
-  console.error('Erro ao iniciar API:', err);
-  process.exit(1);
-}
+export default app;

@@ -1,22 +1,49 @@
+import { LocalEmbedding } from './embedding.js';
+
+export interface SimilarityResult {
+  word: string;
+  similarity: number;
+}
+
 export class SemanticEngine {
-  calculateScore(word: string, secretWord: string, vocabulary?: Map<string, number[]>): number {
-    if (word === secretWord) return 1.0;
-    if (!vocabulary || !vocabulary.has(word) || !vocabulary.has(secretWord)) {
-      return Math.random() * 0.3 + 0.05;
-    }
-    const vecA = vocabulary.get(word)!;
-    const vecB = vocabulary.get(secretWord)!;
-    return this.cosineSimilarity(vecA, vecB);
+  private embedding: LocalEmbedding;
+
+  constructor(embedding: LocalEmbedding) {
+    this.embedding = embedding;
   }
-  cosineSimilarity(vecA: number[], vecB: number[]): number {
-    if (vecA.length !== vecB.length) return 0;
+
+  async computeSimilarity(wordA: string, wordB: string): Promise<number> {
+    const [embA, embB] = await Promise.all([
+      this.embedding.getEmbedding(wordA),
+      this.embedding.getEmbedding(wordB),
+    ]);
+    return this.cosineSimilarity(embA, embB);
+  }
+
+  async findSimilar(word: string, candidates: string[], topK = 5): Promise<SimilarityResult[]> {
+    const wordEmb = await this.embedding.getEmbedding(word);
+    const candidateEmbs = await Promise.all(
+      candidates.map((c) => this.embedding.getEmbedding(c))
+    );
+
+    const results: SimilarityResult[] = candidates.map((c, i) => ({
+      word: c,
+      similarity: this.cosineSimilarity(wordEmb, candidateEmbs[i]),
+    }));
+
+    results.sort((a, b) => b.similarity - a.similarity);
+    return results.slice(0, topK);
+  }
+
+  private cosineSimilarity(a: number[], b: number[]): number {
+    if (a.length !== b.length) return 0;
     let dot = 0, normA = 0, normB = 0;
-    for (let i = 0; i < vecA.length; i++) {
-      dot += vecA[i] * vecB[i];
-      normA += vecA[i] * vecA[i];
-      normB += vecB[i] * vecB[i];
+    for (let i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
     }
-    if (normA === 0 || normB === 0) return 0;
-    return Math.max(0, Math.min(1, dot / (Math.sqrt(normA) * Math.sqrt(normB))));
+    const denom = Math.sqrt(normA) * Math.sqrt(normB);
+    return denom === 0 ? 0 : dot / denom;
   }
 }

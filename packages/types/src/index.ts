@@ -1,71 +1,75 @@
-// ============================================================
-// Integra Contexto — Tipos Compartilhados (Event Contracts)
-// ============================================================
-
-export type Platform = 'tiktok' | 'youtube' | 'twitch' | 'instagram';
+export type Platform = 'tiktok' | 'youtube' | 'twitch' | 'custom';
 
 export interface PlatformUser {
   id: string;
   username: string;
-  displayName?: string;
+  displayName: string;
   avatarUrl?: string;
+  platform: Platform;
+  platformUserId: string;
 }
 
 export interface NormalizedChatEvent {
-  event: 'chat.message';
+  type: 'chat';
+  id: string;
   platform: Platform;
-  streamId: string;
-  user: PlatformUser;
+  roomId: string;
+  userId: string;
+  username: string;
+  displayName: string;
   message: string;
-  timestamp: number;
-  metadata?: Record<string, unknown>;
+  timestamp: Date;
+  raw?: unknown;
 }
 
 export interface NormalizedFollowEvent {
-  event: 'follow';
+  type: 'follow';
+  id: string;
   platform: Platform;
-  streamId: string;
-  user: PlatformUser;
-  timestamp: number;
+  roomId: string;
+  userId: string;
+  username: string;
+  displayName: string;
+  timestamp: Date;
+  raw?: unknown;
 }
 
 export interface NormalizedGiftEvent {
-  event: 'gift';
+  type: 'gift';
+  id: string;
   platform: Platform;
-  streamId: string;
-  user: PlatformUser;
+  roomId: string;
+  userId: string;
+  username: string;
+  displayName: string;
   giftName: string;
-  diamondCount: number;
-  repeatCount: number;
-  timestamp: number;
+  giftAmount: number;
+  timestamp: Date;
+  raw?: unknown;
 }
 
 export type NormalizedEvent = NormalizedChatEvent | NormalizedFollowEvent | NormalizedGiftEvent;
 
-export type GameStatus = 'draft' | 'ready' | 'active' | 'paused' | 'finished';
+export type GameStatus = 'waiting' | 'active' | 'completed' | 'cancelled';
 
 export interface GameState {
   id: string;
   streamId: string;
-  gameType: string;
-  secretWordId: string;
-  secretWord: string;
   status: GameStatus;
-  startedAt?: number;
-  finishedAt?: number;
+  currentWord: string;
+  hints: string[];
+  scores: Record<string, number>;
+  round: number;
+  maxRounds: number;
+  startedAt?: Date;
+  endedAt?: Date;
+  createdAt: Date;
 }
 
-export type RealtimeEventType =
-  | 'game.started'
-  | 'guess.created'
-  | 'guess.rank_updated'
-  | 'leaderboard.updated'
-  | 'player.joined'
-  | 'hint.created'
-  | 'game.finished';
+export type RealtimeEventType = 'game:update' | 'game:end' | 'chat:new' | 'score:update' | 'leaderboard:update';
 
 export interface RealtimeEvent {
-  event: RealtimeEventType;
-  gameId: string;
-  [key: string]: unknown;
+  type: RealtimeEventType;
+  payload: unknown;
+  timestamp: Date;
 }

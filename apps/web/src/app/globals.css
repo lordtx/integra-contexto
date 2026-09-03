@@ -2,27 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background: #0a0a0f;
-  color: #e2e8f0;
-  font-family: 'JetBrains Mono', monospace;
+:root {
+  --foreground: #171717;
+  --background: #ffffff;
 }
 
-@layer components {
-  .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground: #ededed;
+    --background: #0a0a0a;
   }
-  .btn-primary { @apply btn bg-indigo-600 hover:bg-indigo-500 text-white; }
-  .btn-success { @apply btn bg-emerald-600 hover:bg-emerald-500 text-white; }
-  .btn-danger { @apply btn bg-red-600 hover:bg-red-500 text-white; }
-  .btn-warning { @apply btn bg-amber-600 hover:bg-amber-500 text-white; }
-  .card { @apply bg-[#12121a] border border-[#1e1e2e] rounded-xl p-4; }
-  .gradient-text { @apply bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent; }
-  .glass { @apply bg-[#12121a]/80 backdrop-blur-sm border border-[#1e1e2e]; }
-  @keyframes live-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-  .live-dot { animation: live-dot 1.5s ease-in-out infinite; }
 }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1e1e2e; border-radius: 2px; }
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: system-ui, -apple-system, sans-serif;
+}

@@ -1,25 +1,59 @@
-export interface WordEntry { id: string; word: string; normalized: string; }
-export class WordManager {
-  private words = new Map<string, WordEntry>();
-  private blocked = new Set<string>();
-  private secretWordId: string | null = null;
+import { normalizeWord } from './normalization.js';
 
-  addWord(word: string, id?: string): WordEntry {
-    const normalized = word.toLowerCase().trim();
-    const entry = { id: id || crypto.randomUUID(), word, normalized };
-    this.words.set(normalized, entry);
-    return entry;
+export interface WordEntry {
+  id?: string;
+  word: string;
+  normalized: string;
+  category?: string;
+  difficulty: number;
+  hints: string[];
+}
+
+export class WordManager {
+  private words: WordEntry[] = [];
+  private usedWords: Set<string> = new Set();
+
+  constructor(initialWords?: WordEntry[]) {
+    if (initialWords) {
+      this.words = initialWords.map((w) => ({
+        ...w,
+        normalized: w.normalized || normalizeWord(w.word),
+      }));
+    }
   }
-  getWord(normalized: string): WordEntry | undefined { return this.words.get(normalized); }
-  getSecretWord(): WordEntry {
-    if (!this.secretWordId) throw new Error('No secret word set');
-    const entry = Array.from(this.words.values()).find(w => w.id === this.secretWordId);
-    if (!entry) throw new Error('Secret word not found');
-    return entry;
+
+  addWord(entry: Omit<WordEntry, 'normalized'>): void {
+    this.words.push({
+      ...entry,
+      normalized: normalizeWord(entry.word),
+    });
   }
-  setSecretWord(wordId: string): void { this.secretWordId = wordId; }
-  isBlocked(word: string): boolean { return this.blocked.has(word.toLowerCase().trim()); }
-  addBlockedWord(word: string): void { this.blocked.add(word.toLowerCase().trim()); }
-  isValidWord(word: string): boolean { return !!word && word.length >= 2 && word.length <= 50; }
-  getAllWords(): WordEntry[] { return Array.from(this.words.values()); }
+
+  getRandomWord(difficulty?: number): WordEntry | null {
+    const pool = difficulty
+      ? this.words.filter((w) => w.difficulty === difficulty && !this.usedWords.has(w.normalized))
+      : this.words.filter((w) => !this.usedWords.has(w.normalized));
+
+    if (pool.length === 0) return null;
+
+    const chosen = pool[Math.floor(Math.random() * pool.length)];
+    this.usedWords.add(chosen.normalized);
+    return chosen;
+  }
+
+  findWord(normalized: string): WordEntry | undefined {
+    return this.words.find((w) => w.normalized === normalized);
+  }
+
+  resetUsedWords(): void {
+    this.usedWords.clear();
+  }
+
+  getAllWords(): WordEntry[] {
+    return [...this.words];
+  }
+
+  getCategories(): string[] {
+    return [...new Set(this.words.map((w) => w.category).filter(Boolean))] as string[];
+  }
 }

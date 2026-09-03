@@ -1,13 +1,43 @@
-import IORedis from 'ioredis';
-import { Queue, Worker } from 'bullmq';
-import type { NormalizedEvent } from '@integra/types';
+import { Queue, QueueEvents } from 'bullmq';
 
-const REDIS_URL = process.env.REDIS_URL || `redis://:${process.env.REDIS_PASSWORD || ''}@${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || '6379'}`;
-export const connection = new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
+const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
-export const queues = {
-  tiktokEvents: new Queue<NormalizedEvent>('tiktok-events', { connection }),
-  processGuesses: new Queue<{ gameId: string; userId: string; username?: string; word: string; normalizedWord: string; timestamp: number }>('process-guesses', { connection }),
-  calculateScore: new Queue<{ guessId: string; gameId: string; word: string; normalizedWord: string; secretWord: string; userId: string }>('calculate-score', { connection }),
-  broadcastEvents: new Queue<{ event: string; gameId: string; data: unknown }>('broadcast-events', { connection }),
-};
+export interface AppQueues {
+  processChat: Queue;
+  processGuess: Queue;
+  calculateScore: Queue;
+  broadcast: Queue;
+  events: {
+    processChat: QueueEvents;
+    processGuess: QueueEvents;
+    calculateScore: QueueEvents;
+    broadcast: QueueEvents;
+  };
+}
+
+export async function initializeQueues(): Promise<AppQueues> {
+  const connection = { url: REDIS_URL };
+
+  const processChat = new Queue('process-chat', { connection });
+  const processGuess = new Queue('process-guess', { connection });
+  const calculateScore = new Queue('calculate-score', { connection });
+  const broadcast = new Queue('broadcast', { connection });
+
+  const processChatEvents = new QueueEvents('process-chat', { connection });
+  const processGuessEvents = new QueueEvents('process-guess', { connection });
+  const calculateScoreEvents = new QueueEvents('calculate-score', { connection });
+  const broadcastEvents = new QueueEvents('broadcast', { connection });
+
+  return {
+    processChat,
+    processGuess,
+    calculateScore,
+    broadcast,
+    events: {
+      processChat: processChatEvents,
+      processGuess: processGuessEvents,
+      calculateScore: calculateScoreEvents,
+      broadcast: broadcastEvents,
+    },
+  };
+}

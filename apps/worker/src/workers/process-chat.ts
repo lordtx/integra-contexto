@@ -1,25 +1,37 @@
-import { Worker } from 'bullmq';
-import { connection } from '../queues.js';
-import { normalizeWord } from '@integra/game-engine';
+import { Queue, Worker, Job } from 'bullmq';
 
-const CHAT_RATE_LIMIT = 5;
-const CHAT_RATE_WINDOW = 10000;
+const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
-export const chatWorker = new Worker('tiktok-events', async (job) => {
-  const { event, user, message, streamId } = job.data;
-  if (event !== 'chat.message') return;
-  const normalized = normalizeWord(message);
-  if (!normalized || normalized.startsWith('!')) return;
-  const redis = connection;
-  const ratelimitKey = `ratelimit:chat:${user.id}`;
-  const count = await redis.incr(ratelimitKey);
-  if (count === 1) await redis.pexpire(ratelimitKey, CHAT_RATE_WINDOW);
-  if (count > CHAT_RATE_LIMIT) return;
-  const dedupKey = `dedup:guess:${streamId}:${normalized}`;
-  const deduped = await redis.set(dedupKey, '1', 'EX', 300, 'NX');
-  if (!deduped) return;
-  await job.updateProgress(50);
-  return { gameId: streamId, userId: user.id, username: user.username, word: message, normalizedWord: normalized, timestamp: Date.now() };
-}, { connection, concurrency: 10 });
+export class ProcessChatWorker {
+  private queue: Queue;
+  private worker: Worker | null = null;
 
-console.log('Chat worker registered');
+  constructor(queue: Queue) {
+    this.queue = queue;
+  }
+
+  start(): void {
+    this.worker = new Worker(
+      'process-chat',
+      async (job: Job) => {
+        console.log(`[ProcessChat] Job ${job.id}: processando mensagem`);
+        const { userId, username, message, roomId, platform } = job.data;
+        // Lógica de processamento de chat
+        console.log(`[ProcessChat] ${username}: ${message} (${platform})`);
+      },
+      { connection: { url: REDIS_URL } }
+    );
+
+    this.worker.on('completed', (job) => {
+      console.log(`[ProcessChat] Job ${job.id} concluído`);
+    });
+
+    this.worker.on('failed', (job, err) => {
+      console.error(`[ProcessChat] Job ${job?.id} falhou:`, err);
+    });
+  }
+
+  stop(): void {
+    this.worker?.close();
+  }
+}

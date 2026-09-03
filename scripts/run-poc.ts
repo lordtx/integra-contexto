@@ -1,21 +1,46 @@
-import { config } from 'dotenv'; config();
-import { execSync } from 'child_process';
+import { GameManager } from '@integra/game-engine';
+import { createPirateTokAdapter } from '@integra/tiktok';
 
-async function main() {
-  console.log('=== Integra Contexto - POC Complete ===');
-  console.log('Step 1: Running migrations...');
-  execSync('npx tsx scripts/seed-vocabulary.ts', { stdio: 'inherit' });
-  console.log('');
-  console.log('Step 2: Seeding test game...');
-  execSync('npx tsx scripts/seed-game.ts', { stdio: 'inherit' });
-  console.log('');
-  console.log('Step 3: POC ready!');
-  console.log('');
-  console.log('To test the TikTok connection:');
-  console.log('  npx tsx apps/api/src/poc.ts <username_do_streamer>');
-  console.log('');
-  console.log('To start the API:');
-  console.log('  docker compose up -d');
-  console.log('');
+async function runPoc() {
+  console.log('=== POC Integra Contexto ===');
+
+  // Inicializa engine
+  const gameManager = new GameManager();
+  const game = gameManager.createGame('poc-stream', 3);
+  console.log('Game created:', game.id);
+
+  // Adiciona palavras
+  const words = [
+    { word: 'Elefante', category: 'Animais', difficulty: 1, hints: ['Tromba longa'] },
+    { word: 'Python', category: 'Programação', difficulty: 3, hints: ['Linguagem'] },
+    { word: 'Piano', category: 'Música', difficulty: 2, hints: ['Teclas'] },
+  ];
+  for (const w of words) {
+    gameManager['wordManager'].addWord(w);
+  }
+
+  // Conecta TikTok
+  const adapter = createPirateTokAdapter();
+  adapter.on({
+    onConnected: () => console.log('TikTok conectado'),
+    onEvent: (ev) => console.log('Evento:', ev.type, ev.message),
+  });
+  await adapter.connect({ sessionId: 'poc-session' });
+
+  // Inicia jogo
+  await gameManager.startGame();
+  console.log('Game started:', gameManager.getGame()?.currentWord);
+
+  // Simula palpites
+  const guessResult = await gameManager.submitGuess('user1', 'Player1', 'elefante');
+  console.log('Guess result:', guessResult);
+
+  console.log('Ranking:', gameManager.getRanking());
+
+  // Finaliza
+  gameManager.endGame();
+  await adapter.disconnect();
+  console.log('POC finalizada');
 }
-main().catch(console.error);
+
+runPoc().catch(console.error);

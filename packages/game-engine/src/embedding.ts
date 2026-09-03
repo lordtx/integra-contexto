@@ -1,25 +1,30 @@
 export class LocalEmbedding {
-  private dimension: number = 100;
-  constructor(dim?: number) { if (dim) this.dimension = dim; }
-  generate(text: string): number[] {
-    const vec = new Array(this.dimension).fill(0);
-    const normalized = `^${text.toLowerCase().trim()}$`;
-    for (let i = 0; i < normalized.length - 2; i++) {
-      const trigram = normalized.substring(i, i + 3);
-      let hash = 0;
-      for (const ch of trigram) { hash = ((hash << 5) - hash) + ch.charCodeAt(0); hash = hash & hash; }
-      const idx = ((hash % this.dimension) + this.dimension) % this.dimension;
-      vec[idx] += 1.0;
+  private dimensions = 384;
+  private cache: Map<string, number[]> = new Map();
+
+  async getEmbedding(text: string): Promise<number[]> {
+    const key = text.toLowerCase().trim();
+    if (this.cache.has(key)) {
+      return this.cache.get(key)!;
     }
-    return this.normalize(vec);
+
+    // Gera um embedding pseudo-aleatório determinístico baseado no texto
+    const embedding = this.generatePseudoEmbedding(text);
+    this.cache.set(key, embedding);
+    return embedding;
   }
-  cosineSimilarity(a: number[], b: number[]): number {
-    let dot = 0, normA = 0, normB = 0;
-    for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; normA += a[i] * a[i]; normB += b[i] * b[i]; }
-    return normA === 0 || normB === 0 ? 0 : dot / (Math.sqrt(normA) * Math.sqrt(normB));
-  }
-  normalize(v: number[]): number[] {
-    const norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
-    return norm === 0 ? v : v.map(x => x / norm);
+
+  private generatePseudoEmbedding(text: string): number[] {
+    const emb: number[] = [];
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+    }
+
+    for (let i = 0; i < this.dimensions; i++) {
+      hash = ((hash << 5) - hash + i * 7) | 0;
+      emb.push((hash % 200) / 100 - 1); // normalize to [-1, 1]
+    }
+    return emb;
   }
 }

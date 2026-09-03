@@ -1,91 +1,85 @@
--- ============================================================
--- Integra Contexto — Schema Inicial
--- ============================================================
 CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform VARCHAR(32) NOT NULL,
   platform_user_id VARCHAR(255) NOT NULL,
-  platform VARCHAR(50) NOT NULL DEFAULT 'tiktok',
   username VARCHAR(255) NOT NULL,
-  display_name VARCHAR(255),
+  display_name VARCHAR(255) NOT NULL,
   avatar_url TEXT,
-  is_streamer BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(platform, platform_user_id)
 );
 
 CREATE TABLE IF NOT EXISTS streams (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  streamer_id UUID REFERENCES users(id),
+  platform VARCHAR(32) NOT NULL,
   platform_stream_id VARCHAR(255),
-  platform VARCHAR(50) DEFAULT 'tiktok',
-  status VARCHAR(50) DEFAULT 'active',
-  started_at TIMESTAMPTZ DEFAULT NOW(),
+  title VARCHAR(500),
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   ended_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  status VARCHAR(32) NOT NULL DEFAULT 'live',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS words (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  word TEXT NOT NULL,
-  normalized_word TEXT NOT NULL,
-  language VARCHAR(10) DEFAULT 'pt',
-  embedding vector(768),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(normalized_word, language)
+  word VARCHAR(255) NOT NULL,
+  normalized VARCHAR(255) NOT NULL,
+  category VARCHAR(100),
+  difficulty INTEGER NOT NULL DEFAULT 1,
+  embedding vector(384),
+  hints TEXT[],
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(normalized)
 );
 
 CREATE TABLE IF NOT EXISTS games (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  stream_id UUID REFERENCES streams(id),
-  game_type VARCHAR(50) DEFAULT 'context',
-  secret_word_id UUID REFERENCES words(id),
-  status VARCHAR(50) DEFAULT 'draft',
+  stream_id UUID NOT NULL REFERENCES streams(id) ON DELETE CASCADE,
+  status VARCHAR(32) NOT NULL DEFAULT 'waiting',
+  current_word_id UUID REFERENCES words(id),
+  round INTEGER NOT NULL DEFAULT 0,
+  max_rounds INTEGER NOT NULL DEFAULT 10,
   started_at TIMESTAMPTZ,
-  finished_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  ended_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS guesses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  game_id UUID REFERENCES games(id),
-  user_id UUID REFERENCES users(id),
+  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   word_id UUID REFERENCES words(id),
-  original_word TEXT NOT NULL,
-  normalized_word TEXT NOT NULL,
-  score FLOAT,
-  rank INTEGER,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  guess_text VARCHAR(500) NOT NULL,
+  is_correct BOOLEAN NOT NULL DEFAULT false,
+  similarity_score FLOAT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS game_players (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  game_id UUID REFERENCES games(id),
-  user_id UUID REFERENCES users(id),
-  attempts INTEGER DEFAULT 0,
-  best_rank INTEGER,
-  last_guess_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(game_id, user_id)
+  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  score INTEGER NOT NULL DEFAULT 0,
+  joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (game_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS game_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  game_id UUID REFERENCES games(id),
-  event_type VARCHAR(100) NOT NULL,
-  payload JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  event_type VARCHAR(64) NOT NULL,
+  payload JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS leaderboards (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  game_id UUID REFERENCES games(id),
-  user_id UUID REFERENCES users(id),
-  best_rank INTEGER,
-  score FLOAT,
-  attempts INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  score INTEGER NOT NULL DEFAULT 0,
+  rank INTEGER NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(game_id, user_id)
 );

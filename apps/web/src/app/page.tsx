@@ -1,33 +1,29 @@
-'use client';
 import Link from 'next/link';
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8">
-      <div className="max-w-2xl text-center space-y-8">
-        <h1 className="text-6xl font-bold gradient-text">Integra Contexto</h1>
-        <p className="text-lg text-slate-400">Jogo semântico multiplayer onde o chat da sua LIVE é o teclado do jogo.</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-          <div className="card space-y-2">
-            <div className="text-indigo-400 text-2xl">🎮</div>
-            <h3 className="font-semibold">Multi-plataforma</h3>
-            <p className="text-sm text-slate-500">Conecte sua LIVE e os espectadores jogam pelo chat em tempo real.</p>
-          </div>
-          <div className="card space-y-2">
-            <div className="text-purple-400 text-2xl">⚡</div>
-            <h3 className="font-semibold">Tempo real</h3>
-            <p className="text-sm text-slate-500">Ranking atualizado instantaneamente via WebSocket.</p>
-          </div>
-          <div className="card space-y-2">
-            <div className="text-pink-400 text-2xl">🎯</div>
-            <h3 className="font-semibold">Jogos customizáveis</h3>
-            <p className="text-sm text-slate-500">Você define a palavra secreta e as regras da partida.</p>
-          </div>
-        </div>
-        <Link href="/dashboard" className="btn-primary inline-block text-lg px-8 py-3">
-          Ir para Dashboard
+    <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-8">
+      <h1 className="text-4xl font-bold text-primary-600">
+        Integra Contexto
+      </h1>
+      <p className="text-lg text-gray-600 dark:text-gray-400 text-center max-w-md">
+        Jogo de adivinhação de palavras integrado com transmissões ao vivo.
+        Conecte sua live, jogue com a audiência e divirta-se!
+      </p>
+      <div className="flex gap-4">
+        <Link
+          href="/dashboard"
+          className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+        >
+          Dashboard
+        </Link>
+        <Link
+          href="/overlay"
+          className="px-6 py-3 border border-primary-500 text-primary-500 rounded-lg hover:bg-primary-50 transition-colors"
+        >
+          Overlay
         </Link>
       </div>
-    </main>
+    </div>
   );
 }

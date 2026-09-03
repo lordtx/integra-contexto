@@ -1,53 +1,45 @@
-# ============================================================
-# docker-compose.yml
-# ============================================================
+version: '3.8'
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: integra-postgres
-    restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-integra_contexto}
-      POSTGRES_USER: ${POSTGRES_USER:-integra_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
-    ports: ["${POSTGRES_PORT:-5432}:5432"]
-    volumes: [pgdata:/var/lib/postgresql/data]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-integra_user} -d ${POSTGRES_DB:-integra_contexto}"]
-      interval: 5s, timeout: 5s, retries: 5
+      POSTGRES_DB: integra_contexto
+      POSTGRES_USER: integra
+      POSTGRES_PASSWORD: integra_secret
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
   redis:
     image: redis:7-alpine
-    container_name: integra-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD required}
-    ports: ["${REDIS_PORT:-6379}:6379"]
-    volumes: [redisdata:/data]
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 5s, timeout: 3s, retries: 5
+    ports:
+      - '6379:6379'
+
   api:
-    build: { context: ., dockerfile: infrastructure/docker/api.Dockerfile }
-    container_name: integra-api
-    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api.Dockerfile
+    ports:
+      - '3000:3000'
     environment:
-      NODE_ENV: production
-      POSTGRES_HOST: postgres; POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB:-integra_contexto}
-      POSTGRES_USER: ${POSTGRES_USER:-integra_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis; REDIS_PORT: 6379; REDIS_PASSWORD: ${REDIS_PASSWORD}
-    ports: ["${API_PORT:-3001}:3001"]
-    depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy } }
+      DATABASE_URL: postgres://integra:integra_secret@postgres:5432/integra_contexto
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+
   worker:
-    build: { context: ., dockerfile: infrastructure/docker/worker.Dockerfile }
-    container_name: integra-worker
-    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: infrastructure/docker/worker.Dockerfile
     environment:
-      NODE_ENV: production
-      POSTGRES_HOST: postgres; POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB:-integra_contexto}
-      POSTGRES_USER: ${POSTGRES_USER:-integra_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis; REDIS_PORT: 6379; REDIS_PASSWORD: ${REDIS_PASSWORD}
-    depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy } }
-volumes: { pgdata:, redisdata: }
+      DATABASE_URL: postgres://integra:integra_secret@postgres:5432/integra_contexto
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  pgdata:

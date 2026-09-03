@@ -1,21 +1,46 @@
-export interface RankedGuess {
-  wordId: string; word: string; normalized: string; score: number;
-  rank: number; userId?: string; username?: string;
+export interface PlayerScore {
+  userId: string;
+  username: string;
+  score: number;
+  correctGuesses: number;
+  totalGuesses: number;
 }
 
 export class RankingEngine {
-  private guesses: RankedGuess[] = [];
+  private players: Map<string, PlayerScore> = new Map();
 
-  addGuess(wordId: string, word: string, normalized: string, score: number,
-           userId?: string, username?: string): RankedGuess[] {
-    const existing = this.guesses.find(g => g.normalized === normalized);
-    if (existing) return this.guesses;
-    this.guesses.push({ wordId, word, normalized, score, rank: 0, userId, username });
-    this.guesses.sort((a, b) => b.score - a.score || (a.rank || 0) - (b.rank || 0));
-    this.guesses.forEach((g, i) => { g.rank = i + 1; });
-    return this.guesses;
+  addPlayer(userId: string, username: string): void {
+    if (!this.players.has(userId)) {
+      this.players.set(userId, {
+        userId,
+        username,
+        score: 0,
+        correctGuesses: 0,
+        totalGuesses: 0,
+      });
+    }
   }
-  getLeaderboard(): RankedGuess[] { return [...this.guesses]; }
-  getTopN(n: number): RankedGuess[] { return this.guesses.slice(0, n); }
-  reset(): void { this.guesses = []; }
+
+  recordGuess(userId: string, isCorrect: boolean, points?: number): void {
+    const player = this.players.get(userId);
+    if (!player) return;
+
+    player.totalGuesses++;
+    if (isCorrect) {
+      player.correctGuesses++;
+      player.score += points ?? 10;
+    }
+  }
+
+  getRanking(): PlayerScore[] {
+    return [...this.players.values()].sort((a, b) => b.score - a.score);
+  }
+
+  getPlayerScore(userId: string): PlayerScore | undefined {
+    return this.players.get(userId);
+  }
+
+  reset(): void {
+    this.players.clear();
+  }
 }

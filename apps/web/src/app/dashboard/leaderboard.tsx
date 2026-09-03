@@ -1,28 +1,38 @@
 'use client';
 
-const medals = ['🥇', '🥈', '🥉'];
+interface PlayerEntry {
+  rank: number;
+  username: string;
+  score: number;
+}
 
-export default function Leaderboard({ entries }: any) {
-  if (!entries?.length) return (
-    <div className="card">
-      <h2 className="text-xs uppercase tracking-widest text-slate-500 mb-3">Leaderboard</h2>
-      <p className="text-slate-500 text-sm text-center py-8">Nenhum palpite ainda. Compartilhe a LIVE e veja as palavras aparecerem aqui.</p>
-    </div>
-  );
+const mockPlayers: PlayerEntry[] = [
+  { rank: 1, username: 'player1', score: 1200 },
+  { rank: 2, username: 'player2', score: 950 },
+  { rank: 3, username: 'player3', score: 780 },
+];
+
+export function Leaderboard() {
   return (
-    <div className="card">
-      <h2 className="text-xs uppercase tracking-widest text-slate-500 mb-3">Leaderboard</h2>
-      <div className="space-y-1 max-h-96 overflow-y-auto">
-        {entries.map((e: any, i: number) => (
-          <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1a1a2e] transition-colors">
-            <span className="w-6 text-center font-mono text-sm text-slate-500">
-              {i < 3 ? medals[i] : `#${e.rank || i + 1}`}
-            </span>
-            <span className="flex-1 font-medium text-sm text-white">{e.word || e.normalized || '---'}</span>
-            <span className="text-xs text-slate-400 truncate">@{e.username || e.userId?.slice(0,8)}</span>
-            <span className="text-xs font-mono text-indigo-400 w-12 text-right">{e.score?.toFixed(3)}</span>
-          </div>
-        ))}
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+      <h2 className="text-xl font-semibold mb-4">Leaderboard</h2>
+      <div className="space-y-2">
+        {mockPlayers.length === 0 ? (
+          <p className="text-gray-500 text-sm">Nenhum jogador ainda</p>
+        ) : (
+          mockPlayers.map((player) => (
+            <div
+              key={player.rank}
+              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded"
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-bold text-primary-500">#{player.rank}</span>
+                <span>{player.username}</span>
+              </div>
+              <span className="font-semibold">{player.score} pts</span>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

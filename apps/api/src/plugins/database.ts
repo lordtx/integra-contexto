@@ -1,12 +1,19 @@
-import type { FastifyInstance } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { getDb, runMigrations, closeDb } from '@integra/database';
+import { getDb, runMigrations } from '@integra/database';
 
-async function databasePlugin(app: FastifyInstance): Promise<void> {
+export const databasePlugin = fp(async (app: FastifyInstance) => {
   const db = getDb();
   await runMigrations();
-  app.decorate('db', db);
-  app.addHook('onClose', async () => { await closeDb(); });
-}
 
-export default fp(databasePlugin);
+  app.decorate('db', db);
+  app.addHook('onClose', async () => {
+    await db.destroy();
+  });
+});
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    db: ReturnType<typeof getDb>;
+  }
+}

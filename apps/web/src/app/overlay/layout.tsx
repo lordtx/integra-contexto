@@ -1,10 +1,13 @@
-'use client';
-import { useEffect } from 'react';
-
-export default function OverlayLayout({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    document.body.style.background = 'transparent';
-    document.body.style.backgroundColor = 'transparent';
-  }, []);
-  return <>{children}</>;
+export default function OverlayLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="pt-BR">
+      <body className="bg-transparent">
+        {children}
+      </body>
+    </html>
+  );
 }

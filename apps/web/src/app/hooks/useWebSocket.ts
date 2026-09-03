@@ -1,54 +1,62 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
 
-type WSStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
-export function useWebSocket(url: string) {
-  const [status, setStatus] = useState<WSStatus>('disconnected');
+interface UseWebSocketOptions {
+  url: string;
+  roomId: string;
+  onMessage?: (data: unknown) => void;
+}
+
+export function useWebSocket({ url, roomId, onMessage }: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
-  const handlersRef = useRef<Map<string, (data: any) => void>>(new Map());
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
+  const [connected, setConnected] = useState(false);
+  const reconnectTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
-    setStatus('connecting');
-    try {
-      const ws = new WebSocket(url);
-      ws.onopen = () => { setStatus('connected'); };
-      ws.onmessage = (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          const handler = handlersRef.current.get(data.event);
-          if (handler) handler(data);
-        } catch {}
-      };
-      ws.onclose = () => { setStatus('disconnected'); wsRef.current = null; reconnect(); };
-      ws.onerror = () => { setStatus('error'); ws.close(); };
-      wsRef.current = ws;
-    } catch { setStatus('error'); reconnect(); }
-  }, [url]);
 
-  const reconnect = useCallback(() => {
-    clearTimeout(reconnectTimer.current);
-    reconnectTimer.current = setTimeout(connect, 3000);
+    const ws = new WebSocket(url);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setConnected(true);
+      ws.send(JSON.stringify({ type: 'join', roomId }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        onMessage?.(data);
+      } catch {
+        // ignore
+      }
+    };
+
+    ws.onclose = () => {
+      setConnected(false);
+      // Reconnect after 3 seconds
+      reconnectTimeout.current = setTimeout(connect, 3000);
+    };
+
+    ws.onerror = () => {
+      ws.close();
+    };
+  }, [url, roomId, onMessage]);
+
+  useEffect(() => {
+    connect();
+    return () => {
+      clearTimeout(reconnectTimeout.current);
+      wsRef.current?.close();
+    };
   }, [connect]);
 
-  const subscribe = useCallback((gameId: string) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN)
-      wsRef.current.send(JSON.stringify({ type: 'subscribe', gameId }));
-  }, []);
-
-  const on = useCallback((event: string, handler: (data: any) => void) => {
-    handlersRef.current.set(event, handler);
-    return () => { handlersRef.current.delete(event); };
-  }, []);
-
-  const send = useCallback((data: object) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN)
+  const send = useCallback((data: unknown) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(data));
+    }
   }, []);
 
-  useEffect(() => { connect(); return () => { clearTimeout(reconnectTimer.current); wsRef.current?.close(); }; }, [connect]);
-
-  return { status, subscribe, on, send };
+  return { connected, send };
 }

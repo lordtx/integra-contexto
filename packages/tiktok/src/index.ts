@@ -1,33 +1,28 @@
-// ============================================================
-// TikTok Adapter — Interface Abstrata
-// ============================================================
-import type {
-  Platform,
-  NormalizedChatEvent,
-  NormalizedFollowEvent,
-  NormalizedGiftEvent,
-} from '@integra/types';
+import { NormalizedEvent } from '@integra/types';
 
 export interface TikTokAdapterConfig {
-  streamerUsername: string;
-  language?: string;
-  region?: string;
+  sessionId: string;
+  roomId?: string;
+  pollIntervalMs?: number;
 }
 
 export interface TikTokAdapterEvents {
-  onChat: (event: NormalizedChatEvent) => void;
-  onFollow: (event: NormalizedFollowEvent) => void;
-  onGift: (event: NormalizedGiftEvent) => void;
+  onEvent: (event: NormalizedEvent) => void;
   onError: (error: Error) => void;
   onConnected: () => void;
   onDisconnected: () => void;
 }
 
 export interface TikTokAdapter {
-  readonly platform: Platform;
-  connect(config: TikTokAdapterConfig, handlers: TikTokAdapterEvents): Promise<void>;
+  connect(config: TikTokAdapterConfig): Promise<void>;
   disconnect(): Promise<void>;
   isConnected(): boolean;
+  on(events: Partial<TikTokAdapterEvents>): void;
 }
 
-export { createPirateTokAdapter } from './piratetok-adapter.js';
+export function createPirateTokAdapter(): TikTokAdapter {
+  const { PirateTokAdapter } = require('./piratetok-adapter');
+  return new PirateTokAdapter();
+}
+
+export { PirateTokAdapter } from './piratetok-adapter';

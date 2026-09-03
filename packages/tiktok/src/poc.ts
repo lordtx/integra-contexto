@@ -1,27 +1,22 @@
-// ============================================================
-// POC: TikTok Adapter
-// ============================================================
-import { createPirateTokAdapter } from '@integra/tiktok';
-const STREAMER_USERNAME = process.argv[2];
-if (!STREAMER_USERNAME) {
-  console.error('\n  Uso: tsx poc.ts <username_streamer>\n');
-  process.exit(1);
+import { createPirateTokAdapter } from './index.js';
+
+async function main() {
+  const adapter = createPirateTokAdapter();
+
+  adapter.on({
+    onConnected: () => console.log('Conectado ao TikTok'),
+    onEvent: (event) => console.log('Evento recebido:', event),
+    onError: (err) => console.error('Erro:', err),
+    onDisconnected: () => console.log('Desconectado'),
+  });
+
+  await adapter.connect({ sessionId: 'test-session' });
+
+  // Aguarda 10 segundos coletando eventos
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+
+  await adapter.disconnect();
+  console.log('POC finalizada');
 }
-const adapter = createPirateTokAdapter();
-const stats = { chats: 0, follows: 0, gifts: 0, likes: 0, startTime: Date.now() };
-function normalizeWord(text: string): string {
-  return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, '').trim().substring(0, 50);
-}
-adapter.connect(
-  { streamerUsername: STREAMER_USERNAME },
-  {
-    onConnected: () => console.log(`Conectado a @${STREAMER_USERNAME}`),
-    onChat: (event) => {
-      stats.chats++;
-      console.log(`[#${stats.chats}] @${event.user.username}: "${event.message}"`);
-    },
-    onFollow: (event) => console.log(`[FOLLOW] @${event.user.username}`),
-    onGift: (event) => console.log(`[GIFT] @${event.user.username}: ${event.giftName} x${event.repeatCount}`),
-    onError: (e) => console.error(e.message),
-  },
-);
+
+main().catch(console.error);
