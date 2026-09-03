@@ -1,0 +1,16 @@
+{
+  "name": "integra-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "tsc", "dev": "tsx watch src/index.ts", "start": "node dist/index.js" },
+  "dependencies": {
+    "@integra/types": "*",
+    "@integra/database": "*",
+    "@integra/game-engine": "*",
+    "@integra/tiktok": "*",
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.3.0"
+  },
+  "devDependencies": { "typescript": "^5.4.0", "tsx": "^4.7.0" }
+}
