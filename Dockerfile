@@ -1,25 +1,34 @@
+# Stage 1: Build
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Copy root configs
+# Root package.json (workspace resolution)
 COPY package.json tsconfig.base.json ./
 
-# Copy all workspace manifests
-COPY packages/types/package.json ./packages/types/
-COPY packages/tiktok/package.json ./packages/tiktok/
-COPY packages/database/package.json ./packages/database/
-COPY packages/game-engine/package.json ./packages/game-engine/
-COPY packages/realtime/package.json ./packages/realtime/
-COPY apps/worker/package.json ./apps/worker/
+# Web app manifest
+COPY apps/web/package.json apps/web/next.config.js apps/web/postcss.config.js apps/web/tailwind.config.ts apps/web/tsconfig.json apps/web/tsconfig.base.json ./apps/web/
 
+# Source code
+COPY apps/web/src ./apps/web/src
+COPY apps/web/public ./apps/web/public
+
+# Build web app
+WORKDIR /app/apps/web
 RUN npm install
+RUN npm run build
 
-# Copy source code
-COPY packages/types ./packages/types
-COPY packages/tiktok ./packages/tiktok
-COPY packages/database ./packages/database
-COPY packages/game-engine ./packages/game-engine
-COPY packages/realtime ./packages/realtime
-COPY apps/worker ./apps/worker
+# Stage 2: Run (standalone)
+FROM node:22-alpine AS runner
+WORKDIR /app
 
-CMD ["npx", "tsx", "apps/worker/src/index.ts"]
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Copy standalone output (Next.js output: 'standalone' mode)
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./.next/static
+COPY --from=builder /app/apps/web/public ./public
+
+EXPOSE 3000
+
+CMD ["node", "apps/web/server.js"]
