@@ -26,7 +26,7 @@ async function main() {
   await app.register(streamRoutes, { prefix: '/api/streams' });
   await app.register(wordRoutes, { prefix: '/api/words' });
 
-  const port = parseInt(process.env.PORT || '3000', 10);
+  const port = parseInt(process.env.API_PORT || process.env.PORT || '3001', 10);
   await app.listen({ port, host: '0.0.0.0' });
   console.log(`API rodando na porta ${port}`);
 }

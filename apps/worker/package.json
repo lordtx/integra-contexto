@@ -4,17 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "dev:worker": "tsx watch src/index.ts"
   },
   "dependencies": {
     "bullmq": "^5.7.0",
     "ioredis": "^5.4.0",
-    "@integra/database": "workspace:*",
-    "@integra/types": "workspace:*",
-    "@integra/game-engine": "workspace:*",
-    "@integra/realtime": "workspace:*"
+    "@integra/database": "*",
+    "@integra/types": "*",
+    "@integra/game-engine": "*",
+    "@integra/realtime": "*"
   },
   "devDependencies": {
     "tsx": "^4.11.0",

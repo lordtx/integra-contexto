@@ -4,19 +4,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
     "build": "tsc",
-    "start": "node dist/main.js"
+    "start": "node dist/main.js",
+    "dev:api": "tsx watch src/main.ts"
   },
   "dependencies": {
     "fastify": "^4.28.0",
     "@fastify/cors": "^9.0.0",
     "zod": "^3.23.0",
-    "@integra/database": "workspace:*",
-    "@integra/types": "workspace:*",
-    "@integra/tiktok": "workspace:*",
-    "@integra/game-engine": "workspace:*",
-    "@integra/realtime": "workspace:*"
+    "@integra/database": "*",
+    "@integra/types": "*",
+    "@integra/tiktok": "*",
+    "@integra/game-engine": "*",
+    "@integra/realtime": "*"
   },
   "devDependencies": {
     "tsx": "^4.11.0",

@@ -7,32 +7,50 @@ interface ControlsProps {
 
 export function Controls({ streamActive, onToggleStream }: ControlsProps) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-      <h2 className="text-xl font-semibold mb-4">Controles</h2>
-      <div className="flex flex-wrap gap-4">
+    <div className="bg-dark-card border border-dark-border rounded-2xl p-6 space-y-5">
+      {/* Nova Rodada — primary CTA */}
+      <button
+        disabled={!streamActive}
+        className="w-full py-3.5 bg-gradient-to-r from-tik-indigo to-tik-purple text-white font-semibold text-sm rounded-xl hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-tik-indigo/20 flex items-center justify-center gap-2"
+      >
+        🎮 NOVA RODADA
+      </button>
+
+      {/* Action grid 2×2 */}
+      <div className="grid grid-cols-2 gap-3">
         <button
-          onClick={onToggleStream}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            streamActive
-              ? 'bg-red-500 text-white hover:bg-red-600'
-              : 'bg-green-500 text-white hover:bg-green-600'
-          }`}
+          disabled={!streamActive}
+          className="py-3 bg-emerald-600/20 border border-emerald-700/40 text-emerald-400 font-medium text-sm rounded-xl hover:bg-emerald-600/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          {streamActive ? 'Parar Stream' : 'Iniciar Stream'}
+          ▶ Iniciar
         </button>
         <button
           disabled={!streamActive}
-          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="py-3 bg-amber-600/20 border border-amber-700/40 text-amber-400 font-medium text-sm rounded-xl hover:bg-amber-600/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          Iniciar Jogo
+          ⏸ Pausar
         </button>
         <button
           disabled={!streamActive}
-          className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="py-3 bg-sky-600/20 border border-sky-700/40 text-sky-400 font-medium text-sm rounded-xl hover:bg-sky-600/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          Próxima Rodada
+          ▶ Retomar
+        </button>
+        <button
+          disabled={!streamActive}
+          className="py-3 bg-rose-600/20 border border-rose-700/40 text-rose-400 font-medium text-sm rounded-xl hover:bg-rose-600/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          ■ Finalizar
         </button>
       </div>
+
+      {/* Dica */}
+      <button
+        disabled={!streamActive}
+        className="w-full py-3 bg-dark-muted border border-dark-border text-zinc-300 font-medium text-sm rounded-xl hover:bg-zinc-800/60 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      >
+        💡 Dica
+      </button>
     </div>
   );
 }

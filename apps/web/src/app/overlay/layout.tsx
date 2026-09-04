@@ -4,8 +4,8 @@ export default function OverlayLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
-      <body className="bg-transparent">
+    <html lang="pt-BR" className="dark">
+      <body className="bg-transparent min-h-screen">
         {children}
       </body>
     </html>

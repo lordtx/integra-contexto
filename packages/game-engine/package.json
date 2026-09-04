@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@integra/types": "workspace:*",
-    "@integra/database": "workspace:*"
+    "@integra/types": "*",
+    "@integra/database": "*"
   }
 }
