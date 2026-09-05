@@ -1,14 +1,31 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import { z } from 'zod'
 
 const createWordSchema = z.object({
   word: z.string().min(1),
   category: z.string().optional(),
   difficulty: z.number().int().min(1).max(10).optional(),
   hints: z.array(z.string()).optional(),
-});
+})
+
+const searchWordSchema = z.object({
+  q: z.string().min(1),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+})
 
 export async function wordRoutes(app: FastifyInstance) {
+  // Search words (MUST come before /:id)
+  app.get('/search', async (req: FastifyRequest, _rep: FastifyReply) => {
+    const { q, limit } = searchWordSchema.parse(req.query);
+    const words = await app.db('words')
+      .where('normalized', 'ilike', `%${q.toLowerCase()}%`)
+      .orWhere('word', 'ilike', `%${q}%`)
+      .select('*')
+      .limit(limit)
+      .orderBy('word', 'asc');
+    return { words };
+  });
+
   // List words
   app.get('/', async (req: FastifyRequest, _rep: FastifyReply) => {
     const { category, difficulty } = req.query as Record<string, string>;

@@ -1,39 +1,4 @@
 services:
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: integra-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-integra_contexto}
-      POSTGRES_USER: ${POSTGRES_USER:-integra}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
-    ports:
-      - "${POSTGRES_PORT:-5433}:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-integra} -d ${POSTGRES_DB:-integra_contexto}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - integra-net
-
-  redis:
-    image: redis:7-alpine
-    container_name: integra-redis
-    restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:?required}
-    ports:
-      - "${REDIS_PORT:-6380}:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - integra-net
-
   api:
     build:
       context: .
@@ -41,26 +6,19 @@ services:
     container_name: integra-api
     restart: unless-stopped
     ports:
-      - "${API_PORT:-3001}:3001"
-    env_file: .env
+      - "3003:3001"
     environment:
-      POSTGRES_HOST: postgres
+      POSTGRES_HOST: db-qgv5lrlyqgzhmpmxkccokx6b
       POSTGRES_PORT: 5432
-      REDIS_HOST: redis
+      POSTGRES_DB: integra_contexto
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      REDIS_HOST: coolify-redis
       REDIS_PORT: 6379
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      REDIS_PASSWORD: XBwH+0AY1knXrJJ2Cz6FI10EWKIkguulXbHpjpDw2u8=
+      API_PORT: "3001"
     networks:
-      - integra-net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.integra-api.rule=Host(`api.dtxnet.top`)"
-      - "traefik.http.routers.integra-api.entrypoints=websecure"
-      - "traefik.http.routers.integra-api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.integra-api.loadbalancer.server.port=3001"
+      - coolify
 
   worker:
     build:
@@ -68,19 +26,17 @@ services:
       dockerfile: infrastructure/docker/worker.Dockerfile
     container_name: integra-worker
     restart: unless-stopped
-    env_file: .env
     environment:
-      POSTGRES_HOST: postgres
+      POSTGRES_HOST: db-qgv5lrlyqgzhmpmxkccokx6b
       POSTGRES_PORT: 5432
-      REDIS_HOST: redis
+      POSTGRES_DB: integra_contexto
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      REDIS_HOST: coolify-redis
       REDIS_PORT: 6379
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      REDIS_PASSWORD: XBwH+0AY1knXrJJ2Cz6FI10EWKIkguulXbHpjpDw2u8=
     networks:
-      - integra-net
+      - coolify
 
   web:
     build:
@@ -89,25 +45,15 @@ services:
     container_name: integra-web
     restart: unless-stopped
     ports:
-      - "${WEB_PORT:-3000}:3000"
-    env_file: .env
+      - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: https://api.dtxnet.top
       NEXT_PUBLIC_WS_URL: wss://ws.dtxnet.top
     depends_on:
       - api
     networks:
-      - integra-net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.integra-web.rule=Host(`app.dtxnet.top`) || Host(`overlay.dtxnet.top`)"
-      - "traefik.http.routers.integra-web.entrypoints=websecure"
-      - "traefik.http.routers.integra-web.tls.certresolver=letsencrypt"
-      - "traefik.http.services.integra-web.loadbalancer.server.port=3000"
-
-volumes:
-  pgdata:
+      - coolify
 
 networks:
-  integra-net:
-    driver: bridge
+  coolify:
+    external: true
