@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package.json tsconfig.base.json ./
 
 # Web app manifest
-COPY apps/web/package.json apps/web/next.config.js apps/web/postcss.config.js apps/web/tailwind.config.ts apps/web/tsconfig.json apps/web/tsconfig.base.json ./apps/web/
+COPY apps/web/package.json apps/web/next.config.js apps/web/postcss.config.js apps/web/tailwind.config.ts apps/web/tsconfig.json ./apps/web/
 
 # Source code
 COPY apps/web/src ./apps/web/src
