@@ -1,7 +1,13 @@
-import { NormalizedEvent } from '@integra/types';
+import type { NormalizedEvent } from '@integra/types';
+import { PirateTokAdapter } from './piratetok-adapter.js';
 
 export interface TikTokAdapterConfig {
+  /**
+   * Identificador da sessão local que está consumindo a LIVE. Não é um token
+   * do TikTok e nunca deve ser exposto ao cliente web.
+   */
   sessionId: string;
+  /** Identificador/username da sala TikTok que será conectado. */
   roomId?: string;
   pollIntervalMs?: number;
 }
@@ -21,8 +27,7 @@ export interface TikTokAdapter {
 }
 
 export function createPirateTokAdapter(): TikTokAdapter {
-  const { PirateTokAdapter } = require('./piratetok-adapter');
   return new PirateTokAdapter();
 }
 
-export { PirateTokAdapter } from './piratetok-adapter';
+export { PirateTokAdapter } from './piratetok-adapter.js';
