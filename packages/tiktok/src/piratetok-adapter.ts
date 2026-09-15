@@ -1,5 +1,5 @@
-import { TikTokAdapter, TikTokAdapterConfig, TikTokAdapterEvents } from './index.js';
-import { NormalizedEvent } from '@integra/types';
+import type { TikTokAdapter, TikTokAdapterConfig, TikTokAdapterEvents } from './index.js';
+import type { NormalizedEvent } from '@integra/types';
 
 type Listener = (event: NormalizedEvent) => void;
 
@@ -10,6 +10,16 @@ export class PirateTokAdapter implements TikTokAdapter {
   private _interval: ReturnType<typeof setInterval> | null = null;
 
   async connect(config: TikTokAdapterConfig): Promise<void> {
+    if (this._connected) {
+      throw new Error('TikTok adapter is already connected');
+    }
+    if (!config.sessionId.trim()) {
+      throw new Error('A non-empty sessionId is required');
+    }
+    if (!config.roomId?.trim()) {
+      throw new Error('A TikTok roomId is required');
+    }
+
     this._config = config;
     this._connected = true;
     this._listeners.onConnected?.();
