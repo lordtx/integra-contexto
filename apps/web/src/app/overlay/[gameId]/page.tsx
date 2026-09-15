@@ -1,66 +1,15 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { OverlayLeaderboard } from '../components/leaderboard';
-import { WinnerScreen } from '../components/winner-screen';
-
-interface GameData {
-  id: string;
-  status: string;
-  currentWord: string;
-  hints: string[];
-  round: number;
-  maxRounds: number;
-}
-
+type Guess = { word: string; user: string; score: number };
+type Session = { channel: string; connected: boolean; round: 'idle' | 'ready' | 'live' | 'paused' | 'finished'; guesses: Guess[]; hint: string };
+const KEY = 'integra-contexto-session';
+const empty: Session = { channel: '', connected: false, round: 'idle', guesses: [], hint: '' };
+function readSession() { try { return { ...empty, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') }; } catch { return empty; } }
 export default function GameOverlayPage() {
-  const params = useParams();
-  const gameId = params.gameId as string;
-  const [game, setGame] = useState<GameData | null>(null);
-
-  useEffect(() => {
-    const mockGame: GameData = {
-      id: gameId,
-      status: 'active',
-      currentWord: '_____',
-      hints: ['Dica: Categoria: Animais', 'Dica: _ _ _ _ _'],
-      round: 1,
-      maxRounds: 10,
-    };
-    setGame(mockGame);
-  }, [gameId]);
-
-  if (!game) {
-    return <div className="text-white text-center py-20">Carregando...</div>;
-  }
-
-  return (
-    <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-8">
-      <div className="bg-black/70 backdrop-blur-md rounded-xl p-8 text-white w-full max-w-2xl border border-white/10">
-        <div className="text-center mb-8">
-          <div className="text-sm text-white/50 mb-2 font-mono">
-            Rodada {game.round}/{game.maxRounds}
-          </div>
-          <div className="text-5xl font-bold tracking-[0.2em] mb-4 font-mono">
-            {game.currentWord}
-          </div>
-          <div className="space-y-1">
-            {game.hints.map((hint, i) => (
-              <div key={i} className="text-lg text-white/70 font-mono">{hint}</div>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <OverlayLeaderboard />
-          <WinnerScreen />
-        </div>
-
-        <div className="text-center mt-6 text-xs text-white/30 font-mono">
-          Integra Contexto · @arthvision
-        </div>
-      </div>
-    </div>
-  );
+  const [session, setSession] = useState<Session>(empty);
+  useEffect(() => { const sync = () => setSession(readSession()); sync(); window.addEventListener('storage', sync); const timer = window.setInterval(sync, 1000); return () => { window.removeEventListener('storage', sync); window.clearInterval(timer); }; }, []);
+  const ranking = [...session.guesses].sort((a, b) => b.score - a.score).slice(0, 3);
+  const title = session.round === 'live' ? 'AO VIVO' : session.round === 'paused' ? 'PAUSADO' : session.round === 'finished' ? 'RODADA ENCERRADA' : 'AGUARDANDO RODADA';
+  return <main className="game-overlay"><section className="overlay-panel"><header className="overlay-header"><div><span className={`overlay-live ${session.round === 'live' ? 'on' : ''}`}><i /> {title}</span><h1>Contexto</h1></div><span className="overlay-channel">{session.channel ? `@${session.channel}` : 'integra.live'}</span></header><div className="overlay-goal"><span>DESCUBRA A PALAVRA SECRETA</span><strong>{session.round === 'live' ? '••••••••' : 'PREPARE A PRÓXIMA RODADA'}</strong><p>{session.hint || 'O apresentador libera a primeira dica ao começar.'}</p></div><section className="overlay-ranking"><div className="overlay-ranking-head"><span>MELHORES DO CHAT</span><span>{session.guesses.length} tentativas</span></div>{ranking.length ? ranking.map((guess, index) => <div className="overlay-row" key={`${guess.word}-${index}`}><b>{index + 1}</b><strong>{guess.word}</strong><span>{guess.user}</span><em>{guess.score}%</em></div>) : <div className="overlay-empty">As palavras do chat vão aparecer aqui.</div>}</section><footer>integra contexto <span>•</span> participe pelo chat</footer></section></main>;
 }
