@@ -1,63 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { StatusPanel } from './status-panel';
-import { Controls } from './controls';
-import { Leaderboard } from './leaderboard';
-import { RecentGuesses } from './recent-guesses';
+import { FormEvent, useMemo, useState } from 'react';
+type Guess = { word: string; user: string; score: number };
+const seed: Guess[] = [{word:'cultura',user:'@maria.live',score:82},{word:'história',user:'@joao',score:68}];
 
 export default function DashboardPage() {
-  const [streamActive, setStreamActive] = useState(false);
-
-  return (
-    <div className="min-h-screen bg-dark-bg text-dark-text">
-      {/* Header */}
-      <header className="border-b border-dark-border px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-tik-indigo via-tik-purple to-tik-pink bg-clip-text text-transparent">
-              Integra Contexto
-            </h1>
-            <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                streamActive
-                  ? 'bg-green-900/40 text-green-400 border border-green-700/50'
-                  : 'bg-zinc-800/40 text-zinc-400 border border-zinc-700/50'
-              }`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  streamActive ? 'bg-green-400 animate-pulse' : 'bg-zinc-500'
-                }`}
-              />
-              {streamActive ? 'LIVE' : 'OFFLINE'}
-            </span>
-          </div>
-          <button className="px-5 py-2 bg-gradient-to-r from-tik-indigo to-tik-purple text-white text-sm font-medium rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-tik-indigo/20">
-            Conectar TikTok
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column — Status + Controls */}
-          <div className="lg:col-span-4 space-y-6">
-            <StatusPanel streamActive={streamActive} />
-            <Controls
-              streamActive={streamActive}
-              onToggleStream={() => setStreamActive(!streamActive)}
-            />
-          </div>
-
-          {/* Right Column — Leaderboard + Recent Guesses */}
-          <div className="lg:col-span-8 space-y-6">
-            <Leaderboard />
-            <RecentGuesses />
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+  const [connected,setConnected] = useState(false);
+  const [round,setRound] = useState<'idle'|'ready'|'live'|'paused'|'finished'>('idle');
+  const [guesses,setGuesses] = useState<Guess[]>([]);
+  const [input,setInput] = useState('');
+  const active = connected && ['ready','live','paused'].includes(round);
+  const label = round === 'live' ? 'RODADA AO VIVO' : round === 'paused' ? 'PAUSADA' : round === 'ready' ? 'PRONTA' : round === 'finished' ? 'ENCERRADA' : 'SEM RODADA';
+  const ranking = useMemo(() => [...guesses].sort((a,b) => b.score-a.score),[guesses]);
+  function addGuess(e:FormEvent){e.preventDefault();const word=input.trim();if(!word||!active)return;setGuesses(old=>[{word,user:'@você',score:Math.max(12,Math.min(98,word.length*9+17))},...old]);setInput('');}
+  function connect(){setConnected(value=>{if(value)setRound('idle');return !value;});}
+  return <main className="dashboard"><header className="topbar"><div><div className="eyebrow">Central da transmissão</div><h1>Integra Contexto</h1></div><div style={{display:'flex',alignItems:'center',gap:10}}><span className={`status ${connected?'live':''}`}><i className="dot" />{connected?'TIKTOK CONECTADO':'DESCONECTADO'}</span><button className="button" onClick={connect}>{connected?'Desconectar':'Conectar TikTok'}</button></div></header><section className="dashboard-grid"><aside className="stack"><section className="card"><h2>Status da sessão</h2><div className="session"><div className="session-row"><span>Canal TikTok</span><b className={connected?'good':'warn'}>{connected?'Conectado':'Aguardando conexão'}</b></div><div className="session-row"><span>Rodada</span><b className={round==='live'?'good':'warn'}>{label}</b></div></div><div className="stats"><div className="stat"><small>Jogadores</small><strong>{guesses.length}</strong></div><div className="stat"><small>Tentativas</small><strong>{guesses.length}</strong></div><div className="stat"><small>Melhor score</small><strong>{ranking[0]?.score ?? '—'}%</strong></div><div className="stat"><small>Palavra</small><strong>{active?'••••••':'—'}</strong></div></div><div className="secret"><span>Objetivo da rodada</span><b>{active?'Descubra o contexto':'Conecte e crie uma rodada'}</b></div></section><section className="card"><h2>Controles</h2><button className="control-main" disabled={!connected} onClick={()=>{setRound('ready');setGuesses([])}}>✦ {round==='ready'?'REINICIAR RODADA':'NOVA RODADA'}</button><div className="control-grid"><button disabled={round!=='ready'&&round!=='paused'} onClick={()=>setRound('live')}>▶ Iniciar</button><button disabled={round!=='live'} onClick={()=>setRound('paused')}>Ⅱ Pausar</button><button disabled={round!=='paused'} onClick={()=>setRound('live')}>▶ Retomar</button><button disabled={!active} onClick={()=>setRound('finished')}>■ Finalizar</button></div><button className="hint" disabled={!active} onClick={()=>setGuesses(old=>[...old,...seed.slice(0,1)])}>💡 Adicionar dica ao painel</button></section></aside><div className="stack"><section className="card"><div className="board-head"><h2>Ranking da rodada</h2><span className="count">{ranking.length} tentativa{ranking.length===1?'':'s'}</span></div>{ranking.length?ranking.map((guess,index)=><div className="rank-row" key={`${guess.word}-${index}`}><span className="rank">#{index+1}</span><span className="word">{guess.word}</span><span className="user">{guess.user}</span><span className="score">{guess.score}%</span></div>):<p className="empty">A rodada está vazia. Assim que o chat enviar palavras, o ranking aparece aqui.</p>}<form className="guess-form" onSubmit={addGuess}><input value={input} onChange={e=>setInput(e.target.value)} disabled={!active} placeholder={active?'Simular palavra do chat…':'Inicie uma rodada para testar'} /><button disabled={!active}>Enviar</button></form>{active&&<p className="notice">Modo de teste ativo: envie uma palavra para validar a experiência sem depender da LIVE.</p>}</section><section className="card"><div className="board-head"><h2>Últimas atividades</h2><span className="count">Atualiza instantaneamente</span></div>{guesses.length?<div>{guesses.slice(0,5).map((guess,index)=><div className="rank-row" key={`recent-${guess.word}-${index}`}><span className="rank">{index+1}</span><span className="word">{guess.word}</span><span className="user">{guess.user}</span><span className="score">+{guess.score}</span></div>)}</div>:<p className="empty">Nenhuma atividade ainda.</p>}</section></div></section></main>;
 }
