@@ -2,11 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 :root {
-  --foreground: #ededed;
-  --background: #0a0a0f;
+  --foreground: #f7f8ff;
+  --background: #090b1b;
+  --muted: #98a0bd;
+  --panel: rgba(20,24,49,.8);
+  --line: rgba(172,181,255,.14);
 }
 
 * {
@@ -21,11 +24,31 @@ html {
 
 body {
   color: var(--foreground);
-  background: var(--background);
-  font-family: 'JetBrains Mono', system-ui, -apple-system, sans-serif;
+  background: radial-gradient(circle at 12% 0%,#25255d 0,transparent 30rem),radial-gradient(circle at 92% 8%,#51234d 0,transparent 28rem),var(--background);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+.shell { max-width:1180px; margin:auto; padding:28px 24px 56px; }
+.brand { font:700 1.35rem 'Space Grotesk'; letter-spacing:-.04em; color:#fff; text-decoration:none; }
+.eyebrow { color:#aaa8ff; font-size:.76rem; font-weight:700; letter-spacing:.13em; text-transform:uppercase; }
+.hero { padding:72px 0 42px; max-width:760px; }
+.hero h1 { margin:12px 0 18px; font:700 clamp(3.25rem,9vw,6.5rem)/.94 'Space Grotesk'; letter-spacing:-.075em; }
+.hero h1 span { background:linear-gradient(105deg,#fff 28%,#bcb4ff 60%,#ff9ac2); -webkit-background-clip:text; color:transparent; }
+.hero p { max-width:600px; color:var(--muted); font-size:1.13rem; line-height:1.65; }
+.nav,.topbar { display:flex; justify-content:space-between; align-items:center; gap:18px; }
+.nav-links { display:flex; gap:10px; align-items:center; }
+.button,.ghost { display:inline-flex; align-items:center; justify-content:center; gap:9px; border-radius:12px; padding:12px 17px; text-decoration:none; font-size:.9rem; font-weight:700; transition:.2s transform,.2s background; }
+.button { border:0; color:white; background:linear-gradient(110deg,#7c5cff,#a74fe9); box-shadow:0 12px 35px rgba(112,82,255,.32); }.button:hover { transform:translateY(-2px); }
+.ghost { color:#dfe1ff; border:1px solid var(--line); background:rgba(255,255,255,.035); }
+.feature-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:30px; }.feature { min-height:185px; padding:20px; border:1px solid var(--line); background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.025)); border-radius:20px; }.feature b { display:block; margin:22px 0 7px; font-size:1rem; }.feature p { margin:0;color:var(--muted);font-size:.86rem;line-height:1.45; }.icon { font-size:1.55rem; }.hero-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:28px; }
+.dashboard { max-width:1240px; margin:auto; padding:22px 24px 52px; }.topbar { padding:12px 0 25px; border-bottom:1px solid var(--line); }.topbar h1 { margin:0; font:700 1.4rem 'Space Grotesk'; }.status { display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;background:#18203b;color:#aeb8d4;font-size:.76rem;font-weight:700; }.status.live{background:rgba(29,184,125,.15);color:#70f1b5}.dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 12px currentColor}
+.dashboard-grid { display:grid; grid-template-columns:minmax(290px,.78fr) minmax(0,1.4fr); gap:18px; margin-top:25px; }.stack{display:grid;gap:18px}.card { border:1px solid var(--line); background:var(--panel); backdrop-filter:blur(14px); border-radius:18px; padding:20px; box-shadow:0 16px 50px rgba(0,0,0,.16); }.card h2 { margin:0 0 18px; font:600 .85rem 'Space Grotesk';letter-spacing:.09em;text-transform:uppercase;color:#c9cce6; }
+.session { display:grid; gap:11px; }.session-row{display:flex;justify-content:space-between;color:var(--muted);font-size:.9rem}.good{color:#76f2b5}.warn{color:#ffc46d}.stats { display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:16px}.stat{padding:12px;border-radius:12px;background:#11152d}.stat small{display:block;color:var(--muted)}.stat strong{display:block;font:600 1.25rem 'Space Grotesk';margin-top:5px}.secret {margin-top:15px;padding:13px;border-radius:12px;background:linear-gradient(110deg,#1b1c47,#321c4f);display:flex;justify-content:space-between;color:#dcd9ff;font-size:.86rem}
+.control-main{width:100%;border:0;border-radius:13px;padding:14px;color:#fff;font-weight:700;background:linear-gradient(110deg,#7159ff,#d458b8)}.control-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:10px}.control-grid button,.hint{border:1px solid var(--line);border-radius:11px;padding:11px;color:#dfe2ff;background:#171b38;font-weight:600}.control-grid button:hover,.hint:hover{background:#242957}.hint{width:100%;margin-top:10px}.control-grid button:disabled,.control-main:disabled,.hint:disabled{opacity:.36;cursor:not-allowed}
+.board-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.board-head h2{margin:0}.count{color:var(--muted);font-size:.82rem}.rank-row{display:grid;grid-template-columns:46px 1fr 1fr auto;gap:10px;align-items:center;padding:12px 10px;border-top:1px solid rgba(255,255,255,.06);font-size:.9rem}.rank{color:#c4bdff;font-weight:700}.word{font-weight:700}.user{color:var(--muted)}.score{color:#88efc0;font-weight:700}.empty{color:var(--muted);text-align:center;padding:28px 0}.guess-form{display:flex;gap:8px;margin-top:14px}.guess-form input{min-width:0;flex:1;border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:#fff;background:#11152d;outline:none}.guess-form input:focus{border-color:#8877ff}.guess-form button{border:0;border-radius:10px;padding:0 14px;color:#fff;background:#6655df;font-weight:700}.notice{margin-top:12px;color:#c7c6fa;font-size:.84rem}
+@media(max-width:760px){.shell,.dashboard{padding-left:16px;padding-right:16px}.feature-grid{grid-template-columns:repeat(2,1fr)}.dashboard-grid{grid-template-columns:1fr}.nav-links .ghost{display:none}.hero{padding-top:50px}.hero h1{font-size:3.5rem}.topbar{align-items:flex-start;flex-wrap:wrap}.rank-row{grid-template-columns:34px 1fr auto}.rank-row .user{display:none}}
 
 /* Scrollbar personalizada */
 ::-webkit-scrollbar {
